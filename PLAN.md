@@ -57,10 +57,11 @@ Principe : un `BaseCharacter` commun, chaque classe est une scène héritée ave
 ## 3. Phases
 
 ### Phase 0 — Squelette (1–2 semaines)
-- [ ] Projet Godot 4, structure de dossiers ci-dessus, `.gitignore` Godot
-- [ ] Un perso qui se déplace au clavier ET au joystick virtuel
-- [ ] Une arène avec murs (`TileMapLayer`) et caméra qui suit
-- [ ] Export Android + Windows fonctionnels dès maintenant (éviter les surprises tard)
+- [x] Projet Godot 4, structure de dossiers ci-dessus, `.gitignore` Godot
+- [x] Un perso qui se déplace au clavier ET au joystick virtuel
+- [x] Une arène avec murs (`TileMapLayer`) et caméra qui suit
+- [x] Export Windows fonctionnel
+- [ ] Export Android fonctionnel (preset prêt, SDK Android à installer)
 
 ### Phase 1 — Combat local (2–3 semaines)
 - [ ] `BaseCharacter` : PV, vitesse, attaque de base, mort/respawn
