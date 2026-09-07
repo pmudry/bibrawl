@@ -14,11 +14,13 @@ const WALL_TILE := Vector2i.ZERO
 	Vector2i(7, 5), Vector2i(7, 12), Vector2i(22, 5), Vector2i(22, 12),
 	Vector2i(14, 8), Vector2i(15, 8), Vector2i(14, 9), Vector2i(15, 9),
 ]
-## Positions de départ, en cases.
+## Position de départ du joueur, en cases.
 @export var player_spawn: Vector2i = Vector2i(5, 9)
-@export var bot_spawn: Vector2i = Vector2i(25, 9)
-@export var bot_scene: PackedScene = preload("res://scenes/characters/bot.tscn")
-## Un bot cible immobile réapparaît après ce délai pour pouvoir continuer à tester.
+## Bots de test : scène + case d'apparition. Chacun réapparaît après destruction.
+const BOTS := [
+	{ "scene": preload("res://scenes/characters/bot.tscn"), "spawn": Vector2i(25, 9) },
+	{ "scene": preload("res://scenes/characters/wander_bot.tscn"), "spawn": Vector2i(15, 3) },
+]
 @export var bot_respawn_delay: float = 3.0
 
 @onready var _walls: TileMapLayer = $Walls
@@ -31,22 +33,23 @@ func _ready() -> void:
 	var bounds := Rect2i(0, 0, width_tiles * TILE_SIZE, height_tiles * TILE_SIZE)
 	_player.set_camera_limits(bounds)
 	_player.position = _tile_center(player_spawn)
-	_spawn_bot()
+	for entry in BOTS:
+		_spawn_bot(entry)
 
 
 func _tile_center(cell: Vector2i) -> Vector2:
 	return (Vector2(cell) + Vector2(0.5, 0.5)) * TILE_SIZE
 
 
-func _spawn_bot() -> void:
-	var bot: BaseCharacter = bot_scene.instantiate()
-	bot.position = _tile_center(bot_spawn)
-	bot.died.connect(_on_bot_died)
+func _spawn_bot(entry: Dictionary) -> void:
+	var bot: BaseCharacter = entry.scene.instantiate()
+	bot.position = _tile_center(entry.spawn)
+	bot.died.connect(_on_bot_died.bind(entry))
 	add_child(bot)
 
 
-func _on_bot_died() -> void:
-	get_tree().create_timer(bot_respawn_delay).timeout.connect(_spawn_bot)
+func _on_bot_died(entry: Dictionary) -> void:
+	get_tree().create_timer(bot_respawn_delay).timeout.connect(_spawn_bot.bind(entry))
 
 
 func _draw() -> void:

@@ -44,9 +44,7 @@ func _ready() -> void:
 
 func _physics_process(delta: float) -> void:
 	_cooldown_left = maxf(_cooldown_left - delta, 0.0)
-	if not is_local_player:
-		return
-	var direction := _read_move()
+	var direction := _compute_move(delta)
 	velocity = direction * speed
 	move_and_slide()
 
@@ -57,6 +55,14 @@ func _physics_process(delta: float) -> void:
 	elif direction.length_squared() > 0.0:
 		_facing = direction.normalized()
 	_nose.rotation = _facing.angle()
+
+
+## Direction de déplacement voulue (longueur 0..1). Le joueur local lit ses
+## inputs ; les bots surchargent cette méthode ; les autres restent immobiles.
+func _compute_move(_delta: float) -> Vector2:
+	if is_local_player:
+		return _read_move()
+	return Vector2.ZERO
 
 
 ## Barre de vie au-dessus de la tête, seulement quand le perso est blessé.
