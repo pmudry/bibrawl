@@ -64,7 +64,8 @@ Principe : un `BaseCharacter` commun, chaque classe est une scène héritée ave
 - [ ] Export Android fonctionnel (preset prêt, SDK Android à installer)
 
 ### Phase 1 — Combat local (2–3 semaines)
-- [ ] `BaseCharacter` : PV, vitesse, attaque de base, mort/respawn
+- [x] `BaseCharacter` : PV, vitesse, attaque de base (projectile), mort — respawn à faire par le mode de jeu
+- [x] Bot cible immobile, destructible, réapparaît (les bots qui bougent et tirent restent à faire)
 - [ ] Les 4 classes :
   - **Assassin** — mêlée rapide, faibles PV, dash
   - **Archer** — projectile à distance, PV moyens

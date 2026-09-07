@@ -20,6 +20,8 @@ Contrôles :
 | Clavier / souris | WASD ou flèches | clic gauche vers la souris, espace devant soi |
 | Tactile | joystick gauche | joystick droit : viser puis relâcher ; tap = tir devant soi ; tap ailleurs = tir vers le point touché |
 
+Un bot immobile (rose) sert de cible ; il réapparaît 3 s après avoir été détruit.
+
 Les joysticks n'apparaissent que sur écran tactile. Pour les tester à la souris sur desktop,
 cocher `always_visible` sur `HUD/MoveJoystick` et `HUD/AimJoystick`.
 

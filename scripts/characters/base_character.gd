@@ -1,11 +1,14 @@
 class_name BaseCharacter
 extends CharacterBody2D
 
-## Personnage de base : déplacement top-down, visée, tir, caméra qui suit.
+## Personnage de base : déplacement top-down, visée, tir, PV, caméra qui suit.
 ## Les classes (assassin, archer, sorcier, tank) hériteront de cette scène.
+## Un bot est simplement cette scène avec `is_local_player = false`.
 
 signal health_changed(current: int, maximum: int)
 signal died
+
+const DEATH_BURST := preload("res://scenes/fx/death_burst.tscn")
 
 @export var speed: float = 260.0
 @export var max_health: int = 100
@@ -19,6 +22,7 @@ signal died
 var health: int
 
 @onready var _camera: Camera2D = $Camera2D
+@onready var _body: Polygon2D = $Body
 @onready var _nose: Node2D = $Nose
 
 var _move_joystick: VirtualJoystick
@@ -30,9 +34,11 @@ var _cooldown_left: float = 0.0
 func _ready() -> void:
 	health = max_health
 	_camera.enabled = is_local_player
+	if not is_local_player:
+		return
 	_move_joystick = get_tree().get_first_node_in_group("move_joystick") as VirtualJoystick
 	_aim_joystick = get_tree().get_first_node_in_group("aim_joystick") as VirtualJoystick
-	if is_local_player and _aim_joystick != null:
+	if _aim_joystick != null:
 		_aim_joystick.released.connect(_on_aim_released)
 
 
@@ -51,6 +57,18 @@ func _physics_process(delta: float) -> void:
 	elif direction.length_squared() > 0.0:
 		_facing = direction.normalized()
 	_nose.rotation = _facing.angle()
+
+
+## Barre de vie au-dessus de la tête, seulement quand le perso est blessé.
+func _draw() -> void:
+	if health >= max_health:
+		return
+	var width := 44.0
+	var height := 6.0
+	var top := -32.0
+	draw_rect(Rect2(-width / 2.0, top, width, height), Color(0, 0, 0, 0.6))
+	var ratio := float(health) / max_health
+	draw_rect(Rect2(-width / 2.0, top, width * ratio, height), Color(0.3, 0.9, 0.4))
 
 
 ## Desktop : clic gauche tire vers la souris, espace tire devant soi.
@@ -93,16 +111,31 @@ func _try_fire(direction: Vector2) -> void:
 	projectile.global_position = global_position + direction * muzzle_offset
 	# Le projectile vit dans la scène, pas dans le perso, pour ne pas suivre ses déplacements.
 	get_tree().current_scene.add_child(projectile)
+	Sfx.play("shoot", -6.0)
 
 
 func take_damage(amount: int, _from: Node2D) -> void:
 	health = maxi(health - amount, 0)
 	health_changed.emit(health, max_health)
+	queue_redraw()
+	Sfx.play("hit", -8.0)
+	# Flash blanc bref pour marquer l'impact.
+	modulate = Color(2.5, 2.5, 2.5)
+	create_tween().tween_property(self, "modulate", Color.WHITE, 0.1)
 	if health == 0:
-		died.emit()
-		# Phase 1 : mort et respawn. Pour l'instant on se contente de remettre les PV.
-		health = max_health
-		health_changed.emit(health, max_health)
+		die()
+
+
+## Éclat de particules aux couleurs du perso, son, puis suppression.
+## Le respawn (Phase 1) sera géré par le mode de jeu, pas ici.
+func die() -> void:
+	died.emit()
+	Sfx.play("destroy")
+	var burst: CPUParticles2D = DEATH_BURST.instantiate()
+	burst.global_position = global_position
+	burst.color = _body.color
+	get_tree().current_scene.add_child(burst)
+	queue_free()
 
 
 ## Empêche la caméra de sortir de l'arène.

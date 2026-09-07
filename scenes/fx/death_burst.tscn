@@ -1,0 +1,19 @@
+[gd_scene load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/fx/death_burst.gd" id="1_burst"]
+
+[node name="DeathBurst" type="CPUParticles2D"]
+emitting = false
+amount = 24
+one_shot = true
+lifetime = 0.5
+explosiveness = 1.0
+spread = 180.0
+gravity = Vector2(0, 0)
+initial_velocity_min = 120.0
+initial_velocity_max = 260.0
+damping_min = 200.0
+damping_max = 300.0
+scale_amount_min = 4.0
+scale_amount_max = 7.0
+script = ExtResource("1_burst")
