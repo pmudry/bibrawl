@@ -3,6 +3,11 @@ extends Control
 
 ## Joystick tactile : une base fixe et un bouton qui suit le doigt.
 ## [member output] vaut un vecteur de longueur 0..1, lu par le personnage.
+## [signal released] sert au joystick de visée : on tire en relâchant.
+
+## Émis au relâchement avec la dernière direction (Vector2.ZERO si le doigt
+## était revenu au centre, ce qui correspond à un simple tap).
+signal released(direction: Vector2)
 
 @export var radius: float = 90.0
 @export var knob_radius: float = 36.0
@@ -12,6 +17,9 @@ extends Control
 @export var always_visible: bool = false
 
 var output: Vector2 = Vector2.ZERO
+var is_pressed: bool:
+	get:
+		return _touch_index != -1
 
 var _touch_index: int = -1
 var _knob_offset: Vector2 = Vector2.ZERO
@@ -59,10 +67,12 @@ func _update_knob(local_position: Vector2) -> void:
 
 
 func _release() -> void:
+	var last_output := output
 	_touch_index = -1
 	_knob_offset = Vector2.ZERO
 	output = Vector2.ZERO
 	queue_redraw()
+	released.emit(last_output)
 
 
 func _draw() -> void:

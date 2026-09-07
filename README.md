@@ -13,8 +13,15 @@ Ouvrir le dossier dans Godot 4.6 et appuyer sur F5, ou en ligne de commande :
 godot --path . 
 ```
 
-Contrôles : WASD / flèches. Sur écran tactile, un joystick virtuel apparaît en bas à gauche.
-Pour le tester à la souris sur desktop, cocher `always_visible` sur le nœud `HUD/VirtualJoystick`.
+Contrôles :
+
+| | Déplacement | Tir |
+|---|---|---|
+| Clavier / souris | WASD ou flèches | clic gauche vers la souris, espace devant soi |
+| Tactile | joystick gauche | joystick droit : viser puis relâcher ; tap = tir devant soi ; tap ailleurs = tir vers le point touché |
+
+Les joysticks n'apparaissent que sur écran tactile. Pour les tester à la souris sur desktop,
+cocher `always_visible` sur `HUD/MoveJoystick` et `HUD/AimJoystick`.
 
 ## Exporter
 
