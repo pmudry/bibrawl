@@ -10,6 +10,7 @@ extends CharacterBody2D
 
 signal health_changed(current: int, maximum: int)
 signal level_changed(level: int)
+signal xp_changed(current: int, needed: int)
 signal died
 
 const DEATH_BURST := preload("res://scenes/fx/death_burst.tscn")
@@ -19,6 +20,8 @@ const DEATH_BURST := preload("res://scenes/fx/death_burst.tscn")
 @export var muzzle_offset: float = 28.0
 ## Seul le joueur local lit les inputs, active sa caméra, gagne des niveaux et réapparaît.
 @export var is_local_player: bool = true
+## Les projectiles ignorent les personnages de la même équipe.
+@export var team: int = 0
 ## Multiplicateurs appliqués par-dessus les stats du niveau.
 @export var health_factor: float = 1.0
 @export var speed_factor: float = 1.0
@@ -27,6 +30,8 @@ const DEATH_BURST := preload("res://scenes/fx/death_burst.tscn")
 ## Niveau courant. Le joueur gagne +1 par ennemi tué ; les bots reçoivent le leur à l'apparition.
 var level: int = 0:
 	set = set_level
+## Expérience accumulée vers le prochain niveau (0 .. XP_PER_LEVEL - 1).
+var xp: int = 0
 
 var max_health: int = 0
 var health: int = 0
@@ -56,6 +61,7 @@ func _ready() -> void:
 	_camera.enabled = is_local_player
 	if not is_local_player:
 		return
+	add_to_group("player")
 	_move_joystick = get_tree().get_first_node_in_group("move_joystick") as VirtualJoystick
 	_aim_joystick = get_tree().get_first_node_in_group("aim_joystick") as VirtualJoystick
 	if _aim_joystick != null:
@@ -176,6 +182,7 @@ func _try_fire(direction: Vector2) -> void:
 	projectile.damage = damage
 	projectile.lifetime = fire_range / projectile.speed
 	projectile.global_position = global_position + direction * muzzle_offset
+	projectile.tint = _body.color
 	# Le projectile vit dans la scène, pas dans le perso, pour ne pas suivre ses déplacements.
 	get_tree().current_scene.add_child(projectile)
 	Sfx.play("shoot", -6.0)
@@ -210,12 +217,29 @@ func die(killer: Node2D = null) -> void:
 		queue_free()
 
 
-## Un ennemi tué = un niveau. Seul le joueur progresse pour l'instant.
-func on_kill(_victim: BaseCharacter) -> void:
+## Tuer rapporte de l'expérience selon l'écart de niveau (voir LevelStats.kill_xp) ;
+## un ennemi nettement plus fort peut faire gagner plusieurs niveaux d'un coup.
+## Seul le joueur progresse pour l'instant.
+func on_kill(victim: BaseCharacter) -> void:
 	if not is_local_player:
 		return
-	level += 1
-	Sfx.play("levelup", -4.0)
+	gain_xp(LevelStats.kill_xp(level, victim.level))
+
+
+func gain_xp(amount: int) -> void:
+	if level >= LevelStats.MAX_LEVEL:
+		return
+	xp += amount
+	var levels_gained := 0
+	while xp >= LevelStats.XP_PER_LEVEL and level < LevelStats.MAX_LEVEL:
+		xp -= LevelStats.XP_PER_LEVEL
+		level += 1
+		levels_gained += 1
+	if level >= LevelStats.MAX_LEVEL:
+		xp = 0
+	if levels_gained > 0:
+		Sfx.play("levelup", -4.0)
+	xp_changed.emit(xp, LevelStats.XP_PER_LEVEL)
 
 
 func _respawn() -> void:

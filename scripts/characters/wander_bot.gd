@@ -1,8 +1,8 @@
 class_name WanderBot
-extends BaseCharacter
+extends Bot
 
 ## Bot qui erre : change de direction au hasard à intervalles irréguliers,
-## fait parfois une pause, rebondit sur ce qu'il percute. Ne tire pas.
+## fait parfois une pause, rebondit sur ce qu'il percute. Tire comme un Bot.
 
 @export var change_interval_min: float = 0.5
 @export var change_interval_max: float = 1.5

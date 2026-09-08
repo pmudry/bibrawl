@@ -20,18 +20,23 @@ Contrôles :
 | Clavier / souris | WASD ou flèches | clic gauche vers la souris, espace devant soi |
 | Tactile | joystick gauche | joystick droit : viser puis relâcher ; tap = tir devant soi ; tap ailleurs = tir vers le point touché |
 
-Deux bots servent de cibles : un rose immobile, un vert qui erre au hasard.
-Chacun réapparaît 3 s après avoir été détruit.
+Deux bots servent d'adversaires : un rose immobile, un vert qui erre au hasard. Les deux
+tirent sur le joueur dès qu'il est à portée. Chacun réapparaît 3 s après avoir été détruit.
 
-## Niveaux
+## Niveaux et expérience
 
-On commence au niveau 0. Chaque ennemi tué donne +1 niveau, jusqu'à 9999. Le niveau
-fait monter PV max, régénération, dégâts, portée, vitesse et cadence de tir, avec une
-courbe logarithmique (gros gains au début, petits ensuite). Les chiffres sont dans
-[level_stats.gd](scripts/characters/level_stats.gd).
+On commence au niveau 0. Le niveau fait monter PV max, régénération, dégâts, portée,
+vitesse et cadence de tir, avec une courbe logarithmique (gros gains au début, petits
+ensuite), jusqu'à 9999. Les chiffres sont dans [level_stats.gd](scripts/characters/level_stats.gd).
+
+Tuer un ennemi donne de l'expérience selon l'écart de niveau : 100 XP (= un niveau) pour
+un ennemi de ton niveau, +50 par niveau qu'il a de plus (max 500, soit 5 niveaux d'un coup),
+-50 par niveau qu'il a de moins (min 25). La barre sous le niveau montre la progression.
 
 Mourir ne fait pas perdre de niveau : on réapparaît au point de départ avec tous ses PV.
-Les bots naissent avec leur propre niveau (celui du joueur, -2 à +3), affiché au-dessus d'eux.
+Les bots naissent avec leur propre niveau (celui du joueur, -2 à +5), affiché au-dessus d'eux,
+et suivent la même courbe de stats : un bot de haut niveau a plus de PV, tire plus fort,
+plus loin, plus souvent et plus précisément.
 
 Les joysticks n'apparaissent que sur écran tactile. Pour les tester à la souris sur desktop,
 cocher `always_visible` sur `HUD/MoveJoystick` et `HUD/AimJoystick`.

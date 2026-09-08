@@ -24,7 +24,7 @@ const BOTS := [
 @export var bot_respawn_delay: float = 3.0
 ## Niveau d'un bot à l'apparition : celui du joueur, décalé au hasard dans cette fourchette.
 @export var bot_level_below: int = 2
-@export var bot_level_above: int = 3
+@export var bot_level_above: int = 5
 
 @onready var _walls: TileMapLayer = $Walls
 @onready var _player: BaseCharacter = $Player
@@ -39,7 +39,9 @@ func _ready() -> void:
 	_player.spawn_position = _tile_center(player_spawn)
 	_player.position = _player.spawn_position
 	_player.level_changed.connect(_hud.set_level)
+	_player.xp_changed.connect(_hud.set_xp)
 	_hud.set_level(_player.level)
+	_hud.set_xp(_player.xp, LevelStats.XP_PER_LEVEL)
 	for entry in BOTS:
 		_spawn_bot(entry)
 
