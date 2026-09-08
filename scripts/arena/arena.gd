@@ -22,9 +22,13 @@ const BOTS := [
 	{ "scene": preload("res://scenes/characters/wander_bot.tscn"), "spawn": Vector2i(15, 3) },
 ]
 @export var bot_respawn_delay: float = 3.0
+## Niveau d'un bot à l'apparition : celui du joueur, décalé au hasard dans cette fourchette.
+@export var bot_level_below: int = 2
+@export var bot_level_above: int = 3
 
 @onready var _walls: TileMapLayer = $Walls
 @onready var _player: BaseCharacter = $Player
+@onready var _hud: Hud = $HUD
 
 
 func _ready() -> void:
@@ -32,7 +36,10 @@ func _ready() -> void:
 	_build_walls()
 	var bounds := Rect2i(0, 0, width_tiles * TILE_SIZE, height_tiles * TILE_SIZE)
 	_player.set_camera_limits(bounds)
-	_player.position = _tile_center(player_spawn)
+	_player.spawn_position = _tile_center(player_spawn)
+	_player.position = _player.spawn_position
+	_player.level_changed.connect(_hud.set_level)
+	_hud.set_level(_player.level)
 	for entry in BOTS:
 		_spawn_bot(entry)
 
@@ -44,6 +51,7 @@ func _tile_center(cell: Vector2i) -> Vector2:
 func _spawn_bot(entry: Dictionary) -> void:
 	var bot: BaseCharacter = entry.scene.instantiate()
 	bot.position = _tile_center(entry.spawn)
+	bot.level = randi_range(maxi(0, _player.level - bot_level_below), _player.level + bot_level_above)
 	bot.died.connect(_on_bot_died.bind(entry))
 	add_child(bot)
 

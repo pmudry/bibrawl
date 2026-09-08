@@ -15,6 +15,7 @@ func _ready() -> void:
 	_streams["shoot"] = _sweep(0.12, 900.0, 350.0, 0.05)
 	_streams["hit"] = _sweep(0.07, 500.0, 200.0, 0.8)
 	_streams["destroy"] = _sweep(0.45, 220.0, 40.0, 0.5)
+	_streams["levelup"] = _sweep(0.3, 400.0, 1000.0, 0.0)
 	for i in POOL_SIZE:
 		var player := AudioStreamPlayer.new()
 		add_child(player)

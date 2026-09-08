@@ -65,7 +65,8 @@ Principe : un `BaseCharacter` commun, chaque classe est une scène héritée ave
 
 ### Phase 1 — Combat local (2–3 semaines)
 - [x] `BaseCharacter` : PV, vitesse, attaque de base (projectile), mort — respawn à faire par le mode de jeu
-- [x] Bot cible immobile, destructible, réapparaît (les bots qui bougent et tirent restent à faire)
+- [x] Bots cibles : un immobile, un errant ; destructibles, réapparaissent (bots qui tirent à faire)
+- [x] Niveaux 0 → 9999 : +1 par kill, stats via `LevelStats` (courbe log), régénération, respawn du joueur sans perte de niveau, bots avec niveau propre affiché
 - [ ] Les 4 classes :
   - **Assassin** — mêlée rapide, faibles PV, dash
   - **Archer** — projectile à distance, PV moyens

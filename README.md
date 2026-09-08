@@ -20,8 +20,18 @@ Contrôles :
 | Clavier / souris | WASD ou flèches | clic gauche vers la souris, espace devant soi |
 | Tactile | joystick gauche | joystick droit : viser puis relâcher ; tap = tir devant soi ; tap ailleurs = tir vers le point touché |
 
-Deux bots servent de cibles (30 PV, soit 3 tirs) : un rose immobile, un vert qui erre au hasard.
+Deux bots servent de cibles : un rose immobile, un vert qui erre au hasard.
 Chacun réapparaît 3 s après avoir été détruit.
+
+## Niveaux
+
+On commence au niveau 0. Chaque ennemi tué donne +1 niveau, jusqu'à 9999. Le niveau
+fait monter PV max, régénération, dégâts, portée, vitesse et cadence de tir, avec une
+courbe logarithmique (gros gains au début, petits ensuite). Les chiffres sont dans
+[level_stats.gd](scripts/characters/level_stats.gd).
+
+Mourir ne fait pas perdre de niveau : on réapparaît au point de départ avec tous ses PV.
+Les bots naissent avec leur propre niveau (celui du joueur, -2 à +3), affiché au-dessus d'eux.
 
 Les joysticks n'apparaissent que sur écran tactile. Pour les tester à la souris sur desktop,
 cocher `always_visible` sur `HUD/MoveJoystick` et `HUD/AimJoystick`.
