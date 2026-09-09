@@ -23,8 +23,8 @@ const BOTS := [
 ]
 @export var bot_respawn_delay: float = 3.0
 ## Niveau d'un bot à l'apparition : celui du joueur, décalé au hasard dans cette fourchette.
-@export var bot_level_below: int = 2
-@export var bot_level_above: int = 5
+@export var bot_level_below: int = 1
+@export var bot_level_above: int = 1
 
 @onready var _walls: TileMapLayer = $Walls
 @onready var _player: BaseCharacter = $Player

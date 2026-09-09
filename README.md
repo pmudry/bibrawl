@@ -34,7 +34,7 @@ un ennemi de ton niveau, +50 par niveau qu'il a de plus (max 500, soit 5 niveaux
 -50 par niveau qu'il a de moins (min 25). La barre sous le niveau montre la progression.
 
 Mourir ne fait pas perdre de niveau : on réapparaît au point de départ avec tous ses PV.
-Les bots naissent avec leur propre niveau (celui du joueur, -2 à +5), affiché au-dessus d'eux,
+Les bots naissent avec leur propre niveau (celui du joueur, -1 à +1), affiché au-dessus d'eux,
 et suivent la même courbe de stats : un bot de haut niveau a plus de PV, tire plus fort,
 plus loin, plus souvent et plus précisément.
 
