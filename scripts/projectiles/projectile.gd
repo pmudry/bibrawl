@@ -18,6 +18,9 @@ var _time_left: float
 
 func _ready() -> void:
 	_time_left = lifetime
+	# Au-dessus de l'herbe : un tir reste visible même tiré depuis un buisson,
+	# c'est justement ce qui trahit le tireur caché.
+	z_index = GrassLayer.Z_INDEX + 1
 	rotation = direction.angle()
 	$Body.color = tint
 	body_entered.connect(_on_body_entered)

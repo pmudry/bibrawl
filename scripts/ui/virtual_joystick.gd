@@ -1,4 +1,4 @@
-class_name VirtualJoystick
+class_name TouchJoystick
 extends Control
 
 ## Joystick tactile : une base fixe et un bouton qui suit le doigt.

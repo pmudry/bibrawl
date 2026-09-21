@@ -14,6 +14,8 @@ signal xp_changed(current: int, needed: int)
 signal died
 
 const DEATH_BURST := preload("res://scenes/fx/death_burst.tscn")
+## Opacité d'un personnage qui se tient dans l'herbe.
+const GRASS_ALPHA := 0.6
 
 @export var projectile_scene: PackedScene = preload("res://scenes/projectiles/projectile.tscn")
 ## Distance entre le centre du perso et le point d'apparition du projectile.
@@ -26,6 +28,14 @@ const DEATH_BURST := preload("res://scenes/fx/death_burst.tscn")
 @export var health_factor: float = 1.0
 @export var speed_factor: float = 1.0
 @export var damage_factor: float = 1.0
+
+@export_group("Herbe")
+## Multiplicateur de régénération tant qu'on se tient dans l'herbe.
+@export var grass_regen_multiplier: float = 3.0
+## En dessous de cette distance, un adversaire repère quand même un personnage caché.
+@export var grass_reveal_distance: float = 90.0
+## Durée pendant laquelle attaquer ou encaisser un coup trahit la cachette.
+@export var grass_reveal_duration: float = 1.2
 
 ## Niveau courant. Le joueur gagne +1 par ennemi tué ; les bots reçoivent le leur à l'apparition.
 var level: int = 0:
@@ -42,16 +52,24 @@ var speed: float
 var fire_cooldown: float
 ## Où réapparaître. Par défaut, la position au moment d'entrer dans la scène.
 var spawn_position: Vector2
+## Vrai quand le personnage se tient dans l'herbe (voir [GrassLayer]).
+var in_grass: bool = false
 
 @onready var _camera: Camera2D = $Camera2D
 @onready var _body: Polygon2D = $Body
 @onready var _nose: Node2D = $Nose
 
-var _move_joystick: VirtualJoystick
-var _aim_joystick: VirtualJoystick
+var _move_joystick: TouchJoystick
+var _aim_joystick: TouchJoystick
 var _facing: Vector2 = Vector2.RIGHT
 var _cooldown_left: float = 0.0
 var _regen_accumulator: float = 0.0
+## Temps restant pendant lequel la cachette est trahie.
+var _reveal_left: float = 0.0
+## Intensité du flash d'impact, 1 au moment du coup puis ramenée à 0.
+var _flash: float = 0.0
+var _grass: GrassLayer
+var _local_player: BaseCharacter
 
 
 func _ready() -> void:
@@ -59,11 +77,14 @@ func _ready() -> void:
 	_apply_level_stats()
 	health = max_health
 	_camera.enabled = is_local_player
+	_grass = get_tree().get_first_node_in_group("grass") as GrassLayer
 	if not is_local_player:
 		return
+	# L'herbe couvre tout le monde, sauf soi : on doit se voir dans sa cachette.
+	z_index = GrassLayer.Z_INDEX + 1
 	add_to_group("player")
-	_move_joystick = get_tree().get_first_node_in_group("move_joystick") as VirtualJoystick
-	_aim_joystick = get_tree().get_first_node_in_group("aim_joystick") as VirtualJoystick
+	_move_joystick = get_tree().get_first_node_in_group("move_joystick") as TouchJoystick
+	_aim_joystick = get_tree().get_first_node_in_group("aim_joystick") as TouchJoystick
 	if _aim_joystick != null:
 		_aim_joystick.released.connect(_on_aim_released)
 
@@ -91,6 +112,8 @@ func _apply_level_stats() -> void:
 
 func _physics_process(delta: float) -> void:
 	_cooldown_left = maxf(_cooldown_left - delta, 0.0)
+	_reveal_left = maxf(_reveal_left - delta, 0.0)
+	in_grass = _grass != null and _grass.covers(global_position)
 	_regenerate(delta)
 	var direction := _compute_move(delta)
 	velocity = direction * speed
@@ -103,6 +126,7 @@ func _physics_process(delta: float) -> void:
 	elif direction.length_squared() > 0.0:
 		_facing = direction.normalized()
 	_nose.rotation = _facing.angle()
+	_update_appearance()
 
 
 ## Régénération lente et continue ; on accumule les fractions pour rendre des PV entiers.
@@ -110,7 +134,10 @@ func _regenerate(delta: float) -> void:
 	if health >= max_health:
 		_regen_accumulator = 0.0
 		return
-	_regen_accumulator += regen_per_second * delta
+	var rate := regen_per_second
+	if in_grass:
+		rate *= grass_regen_multiplier
+	_regen_accumulator += rate * delta
 	var whole := floori(_regen_accumulator)
 	if whole > 0:
 		_regen_accumulator -= whole
@@ -118,6 +145,43 @@ func _regenerate(delta: float) -> void:
 		health_changed.emit(health, max_health)
 		queue_redraw()
 
+
+## Caché pour qui ? La question se pose toujours par rapport à un observateur :
+## on est invisible pour l'adversaire d'en face, jamais « invisible » dans l'absolu.
+## C'est aussi la forme qu'il faudra en réseau, où le serveur répond à cette
+## question une fois par client — le client ne décide jamais seul de ce qu'il voit.
+##
+## Un personnage dans l'herbe disparaît, sauf s'il vient d'attaquer ou d'encaisser
+## un coup, ou si l'observateur est assez près pour le repérer. Les coéquipiers
+## se voient toujours.
+func is_concealed_from(observer: BaseCharacter) -> bool:
+	if not in_grass or _reveal_left > 0.0:
+		return false
+	if not is_instance_valid(observer) or observer == self or observer.team == team:
+		return false
+	return global_position.distance_to(observer.global_position) > grass_reveal_distance
+
+
+## Trahit la cachette pour un court instant (attaque reçue ou donnée).
+func reveal() -> void:
+	_reveal_left = grass_reveal_duration
+
+
+## Une seule écriture de `modulate` par frame : le flash d'impact et la
+## transparence de l'herbe se disputeraient la propriété sinon.
+func _update_appearance() -> void:
+	if not is_local_player:
+		visible = not is_concealed_from(_get_local_player())
+	# Un personnage visible dans l'herbe reste assombri : on voit qu'il y est.
+	var alpha := GRASS_ALPHA if in_grass else 1.0
+	var flash := 1.0 + 1.5 * _flash
+	modulate = Color(flash, flash, flash, alpha)
+
+
+func _get_local_player() -> BaseCharacter:
+	if not is_instance_valid(_local_player):
+		_local_player = get_tree().get_first_node_in_group("player") as BaseCharacter
+	return _local_player
 
 ## Direction de déplacement voulue (longueur 0..1). Le joueur local lit ses
 ## inputs ; les bots surchargent cette méthode ; les autres restent immobiles.
@@ -176,6 +240,7 @@ func _try_fire(direction: Vector2) -> void:
 	if _cooldown_left > 0.0:
 		return
 	_cooldown_left = fire_cooldown
+	reveal()
 	var projectile: Projectile = projectile_scene.instantiate()
 	projectile.direction = direction
 	projectile.shooter = self
@@ -185,7 +250,7 @@ func _try_fire(direction: Vector2) -> void:
 	projectile.tint = _body.color
 	# Le projectile vit dans la scène, pas dans le perso, pour ne pas suivre ses déplacements.
 	get_tree().current_scene.add_child(projectile)
-	Sfx.play("shoot", -6.0)
+	Sfx.play("shoot", -12.0)
 
 
 func take_damage(amount: int, from: Node2D) -> void:
@@ -193,9 +258,11 @@ func take_damage(amount: int, from: Node2D) -> void:
 	health_changed.emit(health, max_health)
 	queue_redraw()
 	Sfx.play("hit", -8.0)
-	# Flash blanc bref pour marquer l'impact.
-	modulate = Color(2.5, 2.5, 2.5)
-	create_tween().tween_property(self, "modulate", Color.WHITE, 0.1)
+	# Flash blanc bref pour marquer l'impact, rendu par _update_appearance().
+	_flash = 1.0
+	create_tween().tween_property(self, "_flash", 0.0, 0.1)
+	# Encaisser un coup trahit la cachette : on ne se fait pas tirer dessus sans réagir.
+	reveal()
 	if health == 0:
 		die(from)
 
@@ -247,6 +314,8 @@ func _respawn() -> void:
 	velocity = Vector2.ZERO
 	health = max_health
 	_regen_accumulator = 0.0
+	_reveal_left = 0.0
+	_flash = 0.0
 	health_changed.emit(health, max_health)
 	_camera.reset_smoothing()
 	queue_redraw()

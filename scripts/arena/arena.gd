@@ -14,6 +14,14 @@ const WALL_TILE := Vector2i.ZERO
 	Vector2i(7, 5), Vector2i(7, 12), Vector2i(22, 5), Vector2i(22, 12),
 	Vector2i(14, 8), Vector2i(15, 8), Vector2i(14, 9), Vector2i(15, 9),
 ]
+## Buissons, en cases. On s'y cache des adversaires et on y régénère plus vite
+## (voir [GrassLayer]). Placés loin des points d'apparition, pour qu'on ait à
+## traverser l'arène à découvert pour les atteindre.
+@export var grass_patches: Array[Rect2i] = [
+	Rect2i(3, 2, 5, 3), Rect2i(3, 13, 5, 3),
+	Rect2i(22, 2, 5, 3), Rect2i(22, 13, 5, 3),
+	Rect2i(12, 5, 6, 2), Rect2i(12, 12, 6, 3),
+]
 ## Position de départ du joueur, en cases.
 @export var player_spawn: Vector2i = Vector2i(5, 9)
 ## Bots de test : scène + case d'apparition. Chacun réapparaît après destruction.
@@ -27,6 +35,7 @@ const BOTS := [
 @export var bot_level_above: int = 1
 
 @onready var _walls: TileMapLayer = $Walls
+@onready var _grass: GrassLayer = $Grass
 @onready var _player: BaseCharacter = $Player
 @onready var _hud: Hud = $HUD
 
@@ -34,6 +43,8 @@ const BOTS := [
 func _ready() -> void:
 	_walls.tile_set = _build_tile_set()
 	_build_walls()
+	for patch in grass_patches:
+		_grass.fill(patch)
 	var bounds := Rect2i(0, 0, width_tiles * TILE_SIZE, height_tiles * TILE_SIZE)
 	_player.set_camera_limits(bounds)
 	_player.spawn_position = _tile_center(player_spawn)

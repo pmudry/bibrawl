@@ -61,6 +61,11 @@ func _think(delta: float) -> void:
 		_target = get_tree().get_first_node_in_group("player") as BaseCharacter
 		if _target == null:
 			return
+	# Une cible cachée dans l'herbe n'existe pas pour le bot : il perd sa visée
+	# et devra reprendre son temps de réaction quand elle ressortira.
+	if _target.is_concealed_from(self):
+		_reaction_left = _reaction_time
+		return
 	var to_target := _target.global_position - global_position
 	# On tire un peu en dedans de la portée max pour que le projectile arrive.
 	if to_target.length() > fire_range * 0.9:
