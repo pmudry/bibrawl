@@ -5,3 +5,6 @@
 
 # Exports
 build/
+
+# Config MCP locale : chemins propres à la machine (WSL, nvm)
+.mcp.json
